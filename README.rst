@@ -1,123 +1,58 @@
+Disclaimer
+============
+
+**This project is currently work in progress and there is no guarantee that it works as intended (in fact, it probably doesn't).**
+
 Introduction
 ============
 
-.. image:: https://readthedocs.org/projects/circuitpython-tinylora/badge/?version=latest
-    :target: https://circuitpython.readthedocs.io/projects/tinylora/en/latest/
-    :alt: Documentation Status
+This is an experimental port of Adafruit's CircuitPython Tiny LoRa / LoRaWAN driver to MicroPython which allows IoT *things* to transmit light payloads to The Things Network (TTN).
 
-.. image:: https://img.shields.io/discord/327254708534116352.svg
-    :target: https://discord.gg/nBQh6qu
-    :alt: Discord
+Original Adafruit repository from which this project has been forked is available here:
 
-.. image:: https://travis-ci.com/adafruit/Adafruit_CircuitPython_TinyLoRa.svg?branch=master
-    :target: https://travis-ci.com/adafruit/Adafruit_CircuitPython_TinyLoRa
-    :alt: Build Status
+https://github.com/adafruit/Adafruit_CircuitPython_TinyLoRa
 
-LoRaWAN/The Things Network, for CircuitPython.
-
-Dependencies
-=============
-This driver depends on:
-
-* `Adafruit CircuitPython <https://github.com/adafruit/circuitpython>`_
-* `Bus Device <https://github.com/adafruit/Adafruit_CircuitPython_BusDevice>`_
-
-Please ensure all dependencies are available on the CircuitPython filesystem.
-This is easily achieved by downloading `the Adafruit library and driver bundle <https://github.com/adafruit/Adafruit_CircuitPython_Bundle>`_.
-
-Installing from PyPI
---------------------
-
-On supported GNU/Linux systems like the Raspberry Pi, you can install the driver locally `from
-PyPI <https://pypi.org/project/adafruit-circuitpython-tinylora/>`_. To install for current user:
-
-.. code-block:: shell
-
-    pip3 install adafruit-circuitpython-tinylora
-
-To install system-wide (this may be required in some cases):
-
-.. code-block:: shell
-
-    sudo pip3 install adafruit-circuitpython-tinylora
-
-To install in a virtual environment in your current project:
-
-.. code-block:: shell
-
-    mkdir project-name && cd project-name
-    python3 -m venv .env
-    source .env/bin/activate
-    pip3 install adafruit-circuitpython-tinylora
-
-Usage Example
-=============
-
-Usage is described in the `learn guide for this library <https://learn.adafruit.com/using-lorawan-and-the-things-network-with-circuitpython>`_.
-
-
-
-Contributing
+Objecive
 ============
 
-Contributions are welcome! Please read our `Code of Conduct
-<https://github.com/adafruit/Adafruit_CircuitPython_TinyLoRa/blob/master/CODE_OF_CONDUCT.md>`_
-before contributing to help this project stay welcoming.
+The aim is to enable LoRa / LoRaWAN capability on MicroPython ESP32 builds, using only minimal (and where possible) native MicroPython libraries.  By in large the code resembles the original, but where applicable, libraries and syntax has been adapted for MicroPython.
 
-Building locally
-================
+Being tested on
+============
 
-Zip release files
------------------
+The project is currently being tested in a limited capacity using:
 
-To build this library locally you'll need to install the
-`circuitpython-build-tools <https://github.com/adafruit/circuitpython-build-tools>`_ package.
+- HelTec Automation ESP32 LoRa development board V2, equipped with Semtech SX1276 module.  Pin out for this development board can be found here: https://github.com/Heltec-Aaron-Lee/WiFi_Kit_series/blob/master/PinoutDiagram/WIFI_LoRa_32_V2.pdf.
+- The Things Network (TTN), with ABP Activation Method (more information on TTN setup: https://learn.adafruit.com/using-lorawan-and-the-things-network-with-circuitpython/tinylora-ttn-setup)
 
-.. code-block:: shell
+The premise of the port is that CircuitPython is equipped with a RF module with the *RFM* module.  As the LoRa component of the RFM module is based on a Semtech SX1276, all of the code relating to the SPI communication shuould be transferrable.
 
-    python3 -m venv .env
-    source .env/bin/activate
-    pip install circuitpython-build-tools
+Further information on CircuitPython can be found here:
 
-Once installed, make sure you are in the virtual environment:
+https://learn.adafruit.com/using-lorawan-and-the-things-network-with-circuitpython/overview
 
-.. code-block:: shell
+Usage example
+============
 
-    source .env/bin/activate
+Note that *DEVADDR*, *NWKEY* and *APP* are shown against your device in the TTN console (if ABP has been configured).
 
-Then run the build:
+SX1276 module requires a number of standard SPI pins (CS, SCK, MOSI and MISO), as well as IRQ and RST.
 
-.. code-block:: shell
+code-block:: python
+	import utime
+	from ulora import TTN, uLoRa
 
-    circuitpython-build-bundles --filename_prefix adafruit-circuitpython-tinylora --library_location .
-
-Sphinx documentation
------------------------
-
-Sphinx is used to build the documentation based on rST files and comments in the code. First,
-install dependencies (feel free to reuse the virtual environment from above):
-
-.. code-block:: shell
-
-    python3 -m venv .env
-    source .env/bin/activate
-    pip install Sphinx sphinx-rtd-theme
-
-Now, once you have the virtual environment activated:
-
-.. code-block:: shell
-
-    cd docs
-    sphinx-build -E -W -b html . _build/html
-
-This will output the documentation to ``docs/_build/html``. Open the index.html in your browser to
-view them. It will also (due to -W) error out on any warning like Travis will. This is a good way to
-locally verify it will pass.
-
-License
-=======
-This library was written by ClemensRiederer. We've converted it to work with Adafruit CircuitPython and made
-changes so it works with the Raspberry Pi and Adafruit Feather M0/M4. We've added examples for using this library
-to transmit data and sensor data to The Things Network.
-
-This open source code is licensed under the LGPL license (see LICENSE for details).
+	TTN_CONFIG = TTN(DEVADDR, NWKEY, APP, country="EU")
+	lora = uLoRa(
+        LORA_CS,
+        LORA_SCK,
+        LORA_MOSI,
+        LORA_MISO,
+        LORA_IRQ,
+        LORA_RST,
+        TTN_CONFIG
+    )
+    # data is a bytearray
+    lora.send_data(data, len(data), lora.frame_counter)
+    
+Note that, throughout, the region (and therefore frequencies) defaults to "EU" unless explicitly specified.
