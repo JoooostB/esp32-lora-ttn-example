@@ -38,22 +38,19 @@ Note that *DEVADDR*, *NWKEY* and *APP* are shown against your device in the TTN 
 
 SX1276 module requires a number of standard SPI pins (CS, SCK, MOSI and MISO), as well as IRQ and RST.
 
-```
-import utime
-from ulora import TTN, uLoRa
-
-TTN_CONFIG = TTN(DEVADDR, NWKEY, APP, country="EU")
-lora = uLoRa(
-    LORA_CS,
-    LORA_SCK,
-    LORA_MOSI,
-    LORA_MISO,
-    LORA_IRQ,
-    LORA_RST,
-    TTN_CONFIG
-)
-# data is a bytearray
-lora.send_data(data, len(data), lora.frame_counter)
-```
+    import utime
+    from ulora import TTN, uLoRa
+    TTN_CONFIG = TTN(DEVADDR, NWKEY, APP, country="EU")
+    lora = uLoRa(
+        LORA_CS,
+        LORA_SCK,
+        LORA_MOSI,
+        LORA_MISO,
+        LORA_IRQ,
+        LORA_RST,
+        TTN_CONFIG
+    )
+    # data is a bytearray
+    lora.send_data(data, len(data), lora.frame_counter)
 
 Note that, throughout, the region (and therefore frequencies) defaults to "EU" unless explicitly specified.
