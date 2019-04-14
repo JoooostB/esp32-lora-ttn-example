@@ -25,7 +25,7 @@ The project is currently being tested in a limited capacity using:
 - HelTec Automation ESP32 LoRa development board V2, equipped with Semtech SX1276 module.  Pin out for this development board can be found here: https://github.com/Heltec-Aaron-Lee/WiFi_Kit_series/blob/master/PinoutDiagram/WIFI_LoRa_32_V2.pdf.
 - The Things Network (TTN), with ABP Activation Method (more information on TTN setup: https://learn.adafruit.com/using-lorawan-and-the-things-network-with-circuitpython/tinylora-ttn-setup)
 
-The premise of the port is that CircuitPython is equipped with a RF module with the *RFM* module.  As the LoRa component of the RFM module is based on a Semtech SX1276, all of the code relating to the SPI communication shuould be transferrable.
+The premise of the port is that CircuitPython is equipped with a RF module, namely the *RFM9x* module.  As the LoRa component of the RFM module is based on a Semtech SX1276, all of the code relating to the SPI communication shuould be transferrable.
 
 Further information on CircuitPython can be found here:
 
@@ -38,21 +38,22 @@ Note that *DEVADDR*, *NWKEY* and *APP* are shown against your device in the TTN 
 
 SX1276 module requires a number of standard SPI pins (CS, SCK, MOSI and MISO), as well as IRQ and RST.
 
-code-block:: python
-	import utime
-	from ulora import TTN, uLoRa
+```
+import utime
+from ulora import TTN, uLoRa
 
-	TTN_CONFIG = TTN(DEVADDR, NWKEY, APP, country="EU")
-	lora = uLoRa(
-        LORA_CS,
-        LORA_SCK,
-        LORA_MOSI,
-        LORA_MISO,
-        LORA_IRQ,
-        LORA_RST,
-        TTN_CONFIG
-    )
-    # data is a bytearray
-    lora.send_data(data, len(data), lora.frame_counter)
-    
+TTN_CONFIG = TTN(DEVADDR, NWKEY, APP, country="EU")
+lora = uLoRa(
+    LORA_CS,
+    LORA_SCK,
+    LORA_MOSI,
+    LORA_MISO,
+    LORA_IRQ,
+    LORA_RST,
+    TTN_CONFIG
+)
+# data is a bytearray
+lora.send_data(data, len(data), lora.frame_counter)
+```
+
 Note that, throughout, the region (and therefore frequencies) defaults to "EU" unless explicitly specified.
