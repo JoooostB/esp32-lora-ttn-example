@@ -18,7 +18,7 @@ Objecive
 The aim is to enable LoRa / LoRaWAN capability on MicroPython ESP32 builds, using only minimal (and where possible) native MicroPython libraries.  By in large the code resembles the original, but where applicable, libraries and syntax has been adapted for MicroPython.
 
 Being tested on
-============
+===============
 
 The project is currently being tested in a limited capacity using:
 
@@ -32,11 +32,13 @@ Further information on CircuitPython can be found here:
 https://learn.adafruit.com/using-lorawan-and-the-things-network-with-circuitpython/overview
 
 Usage example
-============
+=============
 
 Note that *DEVADDR*, *NWKEY* and *APP* are shown against your device in the TTN console (if ABP has been configured).
 
 SX1276 module requires a number of standard SPI pins (CS, SCK, MOSI and MISO), as well as IRQ and RST.
+    
+.. code-block:: python
 
     import utime
     from ulora import TTN, uLoRa
