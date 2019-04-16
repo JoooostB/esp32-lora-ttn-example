@@ -22,44 +22,45 @@ import utime
 import urandom
 import ulora_encryption
 
-# SX1276 module settings
+# SX1276 operating mode settings
 _MODE_SLEEP = const(0x00)
-_MODE_LORA = const(0x80)
 _MODE_STDBY = const(0x01)
-_MODE_TX = const(0x83)
-_TRANSMIT_DIRECTION_UP = const(0x00)
+_MODE_FSTX = const(0x02)
+_MODE_TX = const(0x03)
+_MODE_FSRX = const(0x04)
+_MODE_RX = const(0x05)
+_MODE_ACCESS_SHARED_REG = const(0x40)
+_MODE_LORA = const(0x80)
 # SX1276 registers
-_REG_PA_CONFIG = const(0x09)
-_REG_PREAMBLE_MSB = const(0x20)
-_REG_PREAMBLE_LSB = const(0x21)
+_REG_FIFO = const(0x00)
+_REG_OPERATING_MODE = const(0x01)
 _REG_FRF_MSB = const(0x06)
 _REG_FRF_MID = const(0x07)
 _REG_FRF_LSB = const(0x08)
-_REG_FEI_LSB = const(0x1E)
+_REG_PA_CONFIG = const(0x09)
+_REG_FIFO_POINTER = const(0x0D)
+_REG_RSSI_CONFIG = const(0x0E)
+_REG_RSSI_COLLISION = const(0x0F)
 _REG_FEI_MSB = const(0x1D)
-_REG_MODEM_CONFIG = const(0x26)
-_REG_PAYLOAD_LENGTH = const(0x22)
-_REG_FIFO_POINTER = const(0x0d)
-_REG_FIFO_BASE_ADDR = const(0x80)
-_REG_OPERATING_MODE = const(0x01)
-_REG_VERSION = const(0x42)
+_REG_FEI_LSB = const(0x1E)
 _REG_PREAMBLE_DETECT = const(0x1F)
+_REG_PREAMBLE_MSB = const(0x20)
+_REG_PREAMBLE_LSB = const(0x21)
+_REG_PAYLOAD_LENGTH = const(0x22)
+_REG_MODEM_CONFIG = const(0x26)
 _REG_TIMER1_COEF = const(0x39)
 _REG_NODE_ADDR = const(0x33)
 _REG_IMAGE_CAL = const(0x3B)
-_REG_RSSI_CONFIG = const(0x0E)
-_REG_RSSI_COLLISION = const(0x0F)
+_REG_TEMP_VALUE = const(0x3C)
 _REG_DIO_MAPPING_1 = const(0x40)
-_REG_TEMP_VALUE = const(0x3c)
-
-# Freq synth step
-_FSTEP = (32000000.0 / 524288)
+_REG_VERSION = const(0x42)
+_REG_FIFO_BASE_ADDR = const(0x80)
 
 class TTN:
-    """ TTN Class
+    """ TTN Class.
     """
     def __init__(self, dev_address, net_key, app_key, country="EU"):
-        """ Interface for TheThingsNetwork.
+        """ Interface for The Things Network.
         """
         self.dev_addr = dev_address
         self.net_key = net_key
@@ -67,38 +68,44 @@ class TTN:
         self.region = country
 
     @property
-    def country(self):
-        """ Returns the TTN Frequency Country.
-        """
-        return self.region
-
-    @property
     def device_address(self):
         """ Returns the TTN Device Address.
         """
         return self.dev_addr
-
-    @property
-    def application_key(self):
-        """ Returns the TTN Application Key.
-        """
-        return self.app_key
-
+    
     @property
     def network_key(self):
         """ Returns the TTN Network Key.
         """
         return self.net_key
 
+    @property
+    def application_key(self):
+        """ Returns the TTN Application Key.
+        """
+        return self.app_key
+    
+    @property
+    def country(self):
+        """ Returns the TTN Frequency Country.
+        """
+        return self.region
+
 
 class uLoRa:
-    """ uLoRa Interface
+    """ uLoRa Interface.
     """
-    # SPI Write Buffer
+    # Fixed data rates for SX1276 LoRa
+    _DATA_RATES = {
+        "SF7BW125":(0x74, 0x72, 0x04), "SF7BW250":(0x74, 0x82, 0x04),
+        "SF8BW125":(0x84, 0x72, 0x04), "SF9BW125":(0x94, 0x72, 0x04),
+        "SF10BW125":(0xA4, 0x72, 0x04), "SF11BW125":(0xB4, 0x72, 0x0C),
+        "SF12BW125":(0xC4, 0x72, 0x0C)
+    }
+    # SPI write buffer
     _BUFFER = bytearray(2)
 
-    # pylint: disable=too-many-arguments
-    def __init__(self, cs, sck, mosi, miso, irq, rst, ttn_config, channel=None):
+    def __init__(self, cs, sck, mosi, miso, irq, rst, ttn_config, datarate="SF7BW125", channel=None):
         """ Interface for a Semtech SX1276 module. Sets module up for sending to
         The Things Network.
         """
@@ -126,7 +133,7 @@ class uLoRa:
         self._sf = None
         self._bw = None
         self._modemcfg = None
-        self.set_datarate("SF7BW125")
+        self.set_datarate(datarate)
         # Set regional frequency plan
         if "US" in ttn_config.country:
             from ttn_usa import TTN_FREQS
@@ -207,11 +214,11 @@ class uLoRa:
         """ Sends a LoRa packet using the SX1276 module.
         """
         # Set SX1276 to standby
-        self._write_u8(_MODE_STDBY, 0x81)
+        self._write_u8(_REG_OPERATING_MODE, _MODE_LORA | _MODE_STDBY)
         # Wait for SX1276 to enter standby mode
         utime.sleep_ms(10)
         # Switch interrupt to TxDone
-        self._write_u8(0x40, 0x40)
+        self._write_u8(_REG_DIO_MAPPING_1, 0x40)
         # Check for multi-channel configuration
         if self._channel is None:
             self._tx_random = urandom.getrandbits(3)
@@ -219,17 +226,19 @@ class uLoRa:
             self._rfm_mid = self._frequencies[self._tx_random][1]
             self._rfm_msb = self._frequencies[self._tx_random][0]
         # Set up frequency registers
-        for pair in ((_REG_FRF_MSB, self._rfm_msb), (_REG_FRF_MID, self._rfm_mid),
-                     (_REG_FRF_LSB, self._rfm_lsb), (_REG_FEI_LSB, self._sf),
-                     (_REG_FEI_MSB, self._bw), (_REG_MODEM_CONFIG, self._modemcfg),
-                     (_REG_PAYLOAD_LENGTH, packet_length),
-                     (_REG_FIFO_POINTER, _REG_FIFO_BASE_ADDR)):
+        for pair in (
+            (_REG_FRF_MSB, self._rfm_msb), (_REG_FRF_MID, self._rfm_mid),
+            (_REG_FRF_LSB, self._rfm_lsb), (_REG_FEI_LSB, self._sf),
+            (_REG_FEI_MSB, self._bw), (_REG_MODEM_CONFIG, self._modemcfg),
+            (_REG_PAYLOAD_LENGTH, packet_length),
+            (_REG_FIFO_POINTER, _REG_FIFO_BASE_ADDR)
+        ):
             self._write_u8(pair[0], pair[1])
         # Fill the FIFO buffer with the LoRa payload
         for k in range(packet_length):
-            self._write_u8(0x00, lora_packet[k])
+            self._write_u8(_REG_FIFO, lora_packet[k])
         # Switch SX1276 to TX operating mode
-        self._write_u8(_REG_OPERATING_MODE, _MODE_TX)
+        self._write_u8(_REG_OPERATING_MODE, _MODE_LORA | _MODE_TX)
         # Wait for TxDone IRQ, poll for timeout
         start = utime.time()
         timed_out = False
@@ -244,12 +253,8 @@ class uLoRa:
     def set_datarate(self, datarate):
         """ Sets the SX1276 datarate.
         """
-        data_rates = {"SF7BW125":(0x74, 0x72, 0x04), "SF7BW250":(0x74, 0x82, 0x04),
-                      "SF8BW125":(0x84, 0x72, 0x04), "SF9BW125":(0x94, 0x72, 0x04),
-                      "SF10BW125":(0xA4, 0x72, 0x04), "SF11BW125":(0xB4, 0x72, 0x0C),
-                      "SF12BW125":(0xC4, 0x72, 0x0C)}
         try:
-            self._sf, self._bw, self._modemcfg = data_rates[datarate]
+            self._sf, self._bw, self._modemcfg = self._DATA_RATES[datarate]
         except KeyError:
             raise KeyError("Invalid or Unsupported Datarate.")
 
@@ -257,6 +262,28 @@ class uLoRa:
         """ Sets the SX1276 channel (if single-channel).
         """
         self._rfm_msb, self._rfm_mid, self._rfm_lsb = self._frequencies[channel]
+        
+    def get_temp(self):
+        """ Get temperature reading from SX1276.
+        Output is not an absolute temperature in celcius, and requires calibration
+        """
+        _TEMP_WAIT_TIME = 140
+        # Set SX1276 to standby
+        self._write_u8(_REG_OPERATING_MODE, _MODE_LORA | _MODE_STDBY)
+        # Wait for SX1276 to enter standby mode
+        utime.sleep_ms(10)
+        # Set SX1276 to FSRx mode
+        self._write_u8(_REG_OPERATING_MODE, _MODE_LORA | _MODE_FSRX | _MODE_ACCESS_SHARED_REG)
+        _reg_image_cal = self._read_u8(_REG_IMAGE_CAL)
+        # Clear and re-set TempMonitorOff flag
+        self._write_u8(_REG_IMAGE_CAL, _reg_image_cal & 254)
+        utime.sleep_ms(_TEMP_WAIT_TIME)
+        self._write_u8(_REG_IMAGE_CAL, _reg_image_cal)
+        # Switch SX1276 back to sleep operating mode, and clear access shared register
+        # mode
+        _temp = self._read_u8(_REG_TEMP_VALUE)
+        self._write_u8(_REG_OPERATING_MODE, _MODE_SLEEP & 191)
+        return _temp
 
     def _read_into(self, address, buf):
         """ Read a number of bytes from the specified address into the
