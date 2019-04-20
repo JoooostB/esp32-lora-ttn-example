@@ -26,7 +26,7 @@ The project is currently being tested in a limited capacity using:
 - The Things Network (TTN), with ABP Activation Method (more information on TTN setup: https://learn.adafruit.com/using-lorawan-and-the-things-network-with-circuitpython/tinylora-ttn-setup).
 - Note that as is the case with the TinyLora library this has been forked from, it can only perform unconfirmed data up message type.
 
-The premise of the port is that CircuitPython is equipped with a RF module, namely the *RFM9x* module.  As the LoRa component of the RFM module is based on a Semtech SX1276, all of the code relating to the SPI communication shuould be transferrable.
+The premise of the port is that CircuitPython is equipped with a RF module, namely the *RFM9x* module.  As the LoRa component of the RFM module is based on a Semtech SX1276, all of the code relating to the SPI communication shuuld be transferrable. It may work with other SX127X variants.
 
 Further information on CircuitPython can be found here:
 
