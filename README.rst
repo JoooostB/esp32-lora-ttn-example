@@ -46,32 +46,32 @@ SX1276 module requires a number of standard SPI pins (CS, SCK, MOSI and MISO), a
     import utime
     from ulora import TTN, uLoRa
     # Refer to device pinout / schematics diagrams for pin details
-	LORA_CS = const(18)
-	LORA_SCK = const(5)
-	LORA_MOSI = const(27)
-	LORA_MISO = const(19)
-	LORA_IRQ = const(26)
-	LORA_RST = const(14)
-	LORA_DATARATE = "SF9BW125"	# Choose from several available
-	# From TTN console for device
-	DEVADDR = bytearray([0x00, 0x00, 0x00, 0x00])
-	NWKEY = bytearray([0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
-	                   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00])
-	APP = bytearray([0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-	                 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00])
+    LORA_CS = const(18)
+    LORA_SCK = const(5)
+    LORA_MOSI = const(27)
+    LORA_MISO = const(19)
+    LORA_IRQ = const(26)
+    LORA_RST = const(14)
+    LORA_DATARATE = "SF9BW125"	# Choose from several available
+    # From TTN console for device
+    DEVADDR = bytearray([0x00, 0x00, 0x00, 0x00])
+    NWKEY = bytearray([0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+                       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00])
+    APP = bytearray([0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00])
     TTN_CONFIG = TTN(DEVADDR, NWKEY, APP, country="EU")
-	FPORT = 1
-	lora = uLoRa(
-	    cs=LORA_CS,
-	    sck=LORA_SCK,
-	    mosi=LORA_MOSI,
-	    miso=LORA_MISO,
-	    irq=LORA_IRQ,
-	    rst=LORA_RST,
-	    ttn_config=TTN_CONFIG,
-	    datarate=LORA_DATARATE,
-	    fport=FPORT
-	)
+    FPORT = 1
+    lora = uLoRa(
+        cs=LORA_CS,
+        sck=LORA_SCK,
+        mosi=LORA_MOSI,
+        miso=LORA_MISO,
+        irq=LORA_IRQ,
+        rst=LORA_RST,
+        ttn_config=TTN_CONFIG,
+        datarate=LORA_DATARATE,
+        fport=FPORT
+    )
     # ...Then send data as bytearray
     lora.send_data(data, len(data), lora.frame_counter)
 
