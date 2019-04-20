@@ -28,7 +28,7 @@ The project is currently being tested in a limited capacity using:
 
 The premise of the port is that CircuitPython is equipped with a RF module, namely the *RFM9x* module.  As the LoRa component of the RFM module is based on a Semtech SX1276, all of the code relating to the SPI communication shuuld be transferrable. It may work with other SX127X variants.
 
-![HelTec ESP32 LoRa V2](docs/heltec_esp32_lora_v2.JPG)
+.. image:: docs/heltec_esp32_lora_v2.JPG
 
 Further information on CircuitPython can be found here:
 
