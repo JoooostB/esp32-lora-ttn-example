@@ -20,6 +20,7 @@
 import machine
 import utime
 import urandom
+import ubinascii
 import ulora_encryption
 
 # SX1276 operating mode settings
@@ -105,7 +106,7 @@ class uLoRa:
     # SPI write buffer
     _BUFFER = bytearray(2)
 
-    def __init__(self, cs, sck, mosi, miso, irq, rst, ttn_config, datarate="SF7BW125", channel=None):
+    def __init__(self, cs, sck, mosi, miso, irq, rst, ttn_config, datarate="SF7BW125", fport=1, channel=None):
         """ Interface for a Semtech SX1276 module. Sets module up for sending to
         The Things Network.
         """
@@ -134,6 +135,7 @@ class uLoRa:
         self._bw = None
         self._modemcfg = None
         self.set_datarate(datarate)
+        self._fport = fport
         # Set regional frequency plan
         if "US" in ttn_config.country:
             from ttn_usa import TTN_FREQS
@@ -185,29 +187,39 @@ class uLoRa:
             self.frame_counter
         )
         enc_data = aes.encrypt(enc_data)
-        # Append preamble to packet
-        lora_pkt[0] = _REG_DIO_MAPPING_1
+        # Construct MAC Layer packet (PHYPayload)
+        # MHDR (MAC Header) - 1 byte
+        lora_pkt[0] = 0x40  # MType: unconfirmed data up, RFU / Major zeroed
+        # MACPayload
+        # FHDR (Frame Header): DevAddr (4 bytes) - short device address
         lora_pkt[1] = self._ttn_config.device_address[3]
         lora_pkt[2] = self._ttn_config.device_address[2]
         lora_pkt[3] = self._ttn_config.device_address[1]
         lora_pkt[4] = self._ttn_config.device_address[0]
-        lora_pkt[5] = 0
-        lora_pkt[6] = frame_counter & 0x00FF
-        lora_pkt[7] = (frame_counter >> 8) & 0x00FF
-        lora_pkt[8] = 0x01
+        # FHDR (Frame Header): FCtrl (1 byte) - frame control
+        lora_pkt[5] = 0x00
+        # FHDR (Frame Header): FCnt (2 bytes) - frame counter
+        lora_pkt[6] = self.frame_counter & 0x00FF
+        lora_pkt[7] = (self.frame_counter >> 8) & 0x00FF
+        # FPort - port field
+        lora_pkt[8] = self._fport
         # Set length of LoRa packet
         lora_pkt_len = 9
-        # Load encrypted data into lora_pkt
+        print("PHYPayload", ubinascii.hexlify(lora_pkt))
+        # FRMPayload - MAC Frame Payload Encryption
         lora_pkt[lora_pkt_len:lora_pkt_len+data_length] = enc_data[0:data_length]
+        print("PHYPayload with FRMPayload", ubinascii.hexlify(lora_pkt))
         # Recalculate packet length
         lora_pkt_len += data_length
-        # Calculate MIC
+        # Calculate Message Integrity Code (MIC)
+        # MIC is calculated over: MHDR | FHDR | FPort | FRMPayload
         mic = bytearray(4)
         mic = aes.calculate_mic(lora_pkt, lora_pkt_len, mic)
-        # Load mic in package
+        # Load MIC in package
         lora_pkt[lora_pkt_len:lora_pkt_len+4] = mic[0:4]
         # Recalculate packet length (add MIC length)
         lora_pkt_len += 4
+        print("PHYPayload with FRMPayload + MIC", ubinascii.hexlify(lora_pkt))
         self.send_packet(lora_pkt, lora_pkt_len, timeout)
 
     def send_packet(self, lora_packet, packet_length, timeout):
@@ -217,7 +229,7 @@ class uLoRa:
         self._write_u8(_REG_OPERATING_MODE, _MODE_LORA | _MODE_STDBY)
         # Wait for SX1276 to enter standby mode
         utime.sleep_ms(10)
-        # Switch interrupt to TxDone
+        # Switch interrupt to TxDone (DIO0)
         self._write_u8(_REG_DIO_MAPPING_1, 0x40)
         # Check for multi-channel configuration
         if self._channel is None:
@@ -238,7 +250,7 @@ class uLoRa:
         for k in range(packet_length):
             self._write_u8(_REG_FIFO, lora_packet[k])
         # Switch SX1276 to TX operating mode
-        self._write_u8(_REG_OPERATING_MODE, _MODE_LORA | _MODE_TX)
+        self._write_u8(_REG_OPERATING_MODE, _MODE_TX)
         # Wait for TxDone IRQ, poll for timeout
         start = utime.time()
         timed_out = False
