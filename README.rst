@@ -15,7 +15,7 @@ https://github.com/adafruit/Adafruit_CircuitPython_TinyLoRa
 Objecive
 ============
 
-The aim is to enable LoRa / LoRaWAN capability on MicroPython ESP32 builds, using only minimal (and where possible) native MicroPython libraries.  By in large the code resembles the original, but where applicable, libraries and syntax has been adapted for MicroPython.
+The aim is to enable LoRa / LoRaWAN capability on MicroPython ESP32 builds, using only minimal (and where possible) native MicroPython libraries.  By in large the code resembles the original, but where applicable, libraries and syntax have been adapted for MicroPython.  One notable modification is the omission of Adafruit's Bus Device library (replaced with native SPI libraries).
 
 Being tested on
 ===============
@@ -26,7 +26,7 @@ The project is currently being tested in a limited capacity using:
 - The Things Network (TTN), with ABP Activation Method (more information on TTN setup: https://learn.adafruit.com/using-lorawan-and-the-things-network-with-circuitpython/tinylora-ttn-setup).
 - Note that as is the case with the TinyLora library this has been forked from, it can only perform unconfirmed data up message type.
 
-The premise of the port is that CircuitPython is equipped with a RF module, namely the *RFM9x* module.  As the LoRa component of the RFM module is based on a Semtech SX1276, all of the code relating to the SPI communication shuuld be transferrable. It may work with other SX127X variants.
+The premise of the port is that CircuitPython is equipped with a RF module, namely the *RFM9x* module.  As the LoRa component of the RFM module is based on a Semtech SX1276, all of the code relating to the SPI communication should be transferrable. It may work with other SX127X variants.
 
 .. image:: docs/heltec_esp32_lora_v2.JPG
 
@@ -75,4 +75,19 @@ SX1276 module requires a number of standard SPI pins (CS, SCK, MOSI and MISO), a
     # ...Then send data as bytearray
     lora.send_data(data, len(data), lora.frame_counter)
 
-Note that, throughout, the region (and therefore frequencies) defaults to "EU" unless explicitly specified.
+Throughout, the region (and therefore frequencies) defaults to "EU" unless explicitly specified.
+
+Further information
+=============
+
+The Semtech SX1276 LoRA transceiver datasheet can be found here:
+
+- https://www.semtech.com/uploads/documents/DS_SX1276-7-8-9_W_APP_V6.pdf 
+
+The LoRaWAN specification can be found here:
+
+- https://lora-alliance.org/resource-hub/lorawantm-specification-v11
+
+Rosie the Red Robot blog post detailing the experience with this driver can be found here:
+
+- https://www.rosietheredrobot.com/2019/04/lora-wan-kenobi.html
