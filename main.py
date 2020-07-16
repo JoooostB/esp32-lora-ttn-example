@@ -45,4 +45,4 @@ while True:
     LED.value(1)
     utime.sleep(1)
     LED.value(0)
-    utime.sleep(10)
+    utime.sleep(5)
