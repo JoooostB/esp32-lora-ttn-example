@@ -138,16 +138,16 @@ class uLoRa:
         self._fport = fport
         # Set regional frequency plan
         if "US" in ttn_config.country:
-            from ttn_usa import TTN_FREQS
+            from ttn.ttn_usa import TTN_FREQS
             self._frequencies = TTN_FREQS
         elif ttn_config.country == "AS":
-            from ttn_as import TTN_FREQS
+            from ttn.ttn_as import TTN_FREQS
             self._frequencies = TTN_FREQS
         elif ttn_config.country == "AU":
-            from ttn_au import TTN_FREQS
+            from ttn.ttn_au import TTN_FREQS
             self._frequencies = TTN_FREQS
         elif ttn_config.country == "EU":
-            from ttn_eu import TTN_FREQS
+            from ttn.ttn_eu import TTN_FREQS
             self._frequencies = TTN_FREQS
         else:
             raise TypeError("Country Code Incorrect/Unsupported")
