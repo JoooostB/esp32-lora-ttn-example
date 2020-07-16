@@ -1,4 +1,3 @@
-import time
 import utime
 import struct
 import urandom
@@ -42,6 +41,6 @@ while True:
     payload = struct.pack('@Qh', int(epoch), int(temperature))
     lora.send_data(payload, len(payload), lora.frame_counter)
     LED.value(1)
-    time.sleep(1)
+    utime.sleep(1)
     LED.value(0)
-    time.sleep(10)
+    utime.sleep(10)
